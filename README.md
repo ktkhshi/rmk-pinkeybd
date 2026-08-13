@@ -1,32 +1,25 @@
-# RMK 
+# Pinkeybd RMK firmware
 
-RMK is a feature-rich and easy-to-use keyboard firmware.
+Seeed XIAO nRF52840を2枚使うPinkeybd向けの、RMK 0.8系ファームウェアです。右側をセントラルとしてUSB HID/BLE HIDとPMW3610トラックボールを提供し、左側はBLEペリフェラルとしてキーとエンコーダを転送します。BLEプロファイルは6個です。
 
-## uf2 support
+## 配線
 
-If you’re using the Adafruit_nRF52_Bootloader (pre-installed on the nice!nano), you’re in luck! This bootloader supports the .uf2 firmware format, which eliminates the need for a debugging probe to flash your firmware. RMK uses the `cargo-make` tool to generate .uf2 firmware, with the generation process defined in the `Makefile.toml`.
+- Charlieplex: `D1, D2, D3, D6, D7, D8`（両半分共通）
+- 左エンコーダ: `D4=A`, `D5=B`（Peripheral）
+- 右PMW3610: `D5=SCLK`, `D4=SDIO`, `D9=NCS`, `D10=MOT`（Central）
 
-Follow these steps to generate and flash the .uf2 firmware with RMK:
+GPIOはXIAO BLEの実ピンに変換済みです。6本を入力/出力に切り替えるため、通常マトリクス用のGPIO設定ではなくRMKの`BidirectionalMatrix`を使っています。
 
-1. Get `cargo-make` tool:
-   ```shell
-   cargo install --force cargo-make
-   ```
-2. Compile RMK and generates .uf2 firmware:
-   ```shell
-   cargo make uf2 --release
-   ```
-3. Flash
+## ビルド
 
-   - Put your board into bootloader mode. A USB drive will appear on your computer.
-   - Drag and drop the generated .uf2 firmware file onto the USB drive. The RMK firmware will be automatically flashed onto your microcontroller.
+Rustの組み込みターゲットとフラッシュ用ツールを用意した後、両方を同じRMKバージョンでビルドして書き込みます。
 
-   For additional details on entering bootloader mode and flashing firmware, refer to the [nice!nano documentation](https://nicekeyboards.com/docs/nice-nano/getting-started#flashing-firmware-and-bootloaders)
+```powershell
+rustup target add thumbv7em-none-eabihf
+cargo build --release --bin pinkeybd-left
+cargo build --release --bin pinkeybd-right
+```
 
-### Tips for nRF52840
+XIAOのUF2ブートローダーを使用する場合は、生成されたELFを`cargo-binutils`と`cargo-hex-to-uf2`でUF2へ変換してください。初めて左右を組にする場合は、左右とも既存のBLEペアリング情報を消去してから同じリビジョンを書き込んでください。
 
-Most nice!nano compatible boards have bootloader with SoftDevice pre-flashed. Since v0.7.x, RMK will remove old SoftDevice Bluetooth stack and replace it with its own. So if you want to rollback to v0.6.x, or switch to firmwares that use SoftDevice stack(for example, zmk), you will need to [re-flash the bootloader](https://nicekeyboards.com/docs/nice-nano/troubleshooting#my-nicenano-seems-to-be-acting-up-and-i-want-to-re-flash-the-bootloader).
-
-### Additional notes
-
-RMK defaults to USB-priority mode if a USB cable is connected. After flashing, remember to disconnect the USB cable, or [switch to BLE-priority mode](https://rmk.rs/docs/features/wireless.html#multiple-profile-support) by pressing User11(Switch Output) key.
+`memory.x`はAdafruit UF2ブートローダー用です。SWDでブートローダーなしに書き込む場合は、FLASH開始を`0x00000000`、RAM開始を`0x20000000`に変更してください。
