@@ -6,7 +6,7 @@ license = "MIT OR Apache-2.0"
 description = "RMK firmware for Pinkeybd"
 
 [dependencies]
-rmk = { git = "https://github.com/rmk-rs/rmk", rev = "7104e10926a84e0fb4a7be50946680dae8f2819b", default-features = false, features = ["defmt", "storage", "watchdog", "nrf52840_ble", "split"] }
+rmk = { git = "https://github.com/rmk-rs/rmk", rev = "7104e10926a84e0fb4a7be50946680dae8f2819b", default-features = false, features = ["defmt", "storage", "vial", "watchdog", "nrf52840_ble", "split"] }
 nrf-sdc = { git = "https://github.com/alexmoon/nrf-sdc", rev = "f54b6389ffa2750d4d3a4f5435660cb66b47e51a", features = ["defmt", "peripheral", "central", "nrf52840"] }
 nrf-mpsl = { git = "https://github.com/alexmoon/nrf-sdc", rev = "f54b6389ffa2750d4d3a4f5435660cb66b47e51a", features = ["defmt", "critical-section-impl", "nrf52840"] }
 bt-hci = { version = "0.9", features = ["defmt"] }
@@ -19,6 +19,10 @@ defmt = "1"
 defmt-rtt = "1"
 panic-probe = { version = "1", features = ["print-defmt"] }
 static_cell = "2"
+
+[build-dependencies]
+json = "0.12"
+xz2 = "0.1.7"
 
 [[bin]]
 name = "pinkeybd-left"

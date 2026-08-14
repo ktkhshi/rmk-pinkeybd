@@ -3,6 +3,7 @@
 
 mod keymap;
 mod matrix;
+mod vial;
 
 use defmt::unwrap;
 use defmt_rtt as _;
@@ -18,7 +19,10 @@ use nrf_sdc::mpsl::MultiprotocolServiceLayer;
 use nrf_sdc::{self as sdc, mpsl};
 use panic_probe as _;
 use rmk::ble::BleTransport;
-use rmk::config::{BehaviorConfig, DeviceConfig, PositionalConfig, RmkConfig, StorageConfig};
+use rmk::config::{
+    BehaviorConfig, DeviceConfig, PositionalConfig, RmkConfig, StorageConfig, VialConfig,
+};
+use rmk::host::HostService;
 use rmk::input_device::pmw3610::{BitBangSpiBus, Pmw3610, Pmw3610Config};
 use rmk::input_device::pointing::{PointingDevice, PointingProcessor, PointingProcessorConfig};
 use rmk::keyboard::Keyboard;
@@ -27,6 +31,7 @@ use rmk::usb::UsbTransport;
 use rmk::watchdog::Nrf52Watchdog;
 use rmk::{KeymapData, initialize_keymap_and_storage, run_all};
 use static_cell::StaticCell;
+use vial::{VIAL_KEYBOARD_DEF, VIAL_KEYBOARD_ID};
 
 bind_interrupts!(struct Irqs {
     USBD => usb::InterruptHandler<USBD>;
@@ -147,9 +152,11 @@ async fn main(spawner: Spawner) {
         product_name: "Pinkeybd RMK",
         ..DeviceConfig::default()
     };
+    let vial_config = VialConfig::new(VIAL_KEYBOARD_ID, VIAL_KEYBOARD_DEF, &[]);
     let rmk_config = RmkConfig {
         device_config,
         storage_config,
+        vial_config,
         ..Default::default()
     };
     let mut keymap_data = KeymapData::new_with_encoder(
@@ -168,7 +175,9 @@ async fn main(spawner: Spawner) {
     .await;
 
     let mut keyboard = Keyboard::new(&keymap);
-    let mut usb_transport = UsbTransport::new(driver, rmk_config.device_config);
+    let host_service = HostService::new(&keymap, &rmk_config);
+    let mut usb_transport =
+        UsbTransport::new(driver, rmk_config.device_config).with_host_service(&host_service);
     let mut ble_transport = BleTransport::new(
         sdc,
         ble_addr(),
@@ -179,7 +188,8 @@ async fn main(spawner: Spawner) {
             row_offset: 0,
             col_offset: 0,
         }],
-    );
+    )
+    .with_host_service(&host_service);
     // The PMW3610 is connected to this (central) half.
     let mut pointing_processor = PointingProcessor::new(
         &keymap,
