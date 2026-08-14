@@ -1,0 +1,37 @@
+[tasks.install-llvm-tools]
+install_crate = { rustup_component_name = "llvm-tools" }
+
+[tasks.flip-link]
+install_crate = { crate_name = "flip-link", binary = "flip-link", test_arg = ["-h"] }
+
+[tasks.build]
+command = "cargo"
+args = ["build", "--release", "--bins"]
+dependencies = ["install-llvm-tools", "flip-link"]
+
+[tasks.objcopy-left]
+install_crate = { crate_name = "cargo-binutils", binary = "cargo", test_arg = ["objcopy", "--help"] }
+command = "cargo"
+args = ["objcopy", "--release", "--bin", "pinkeybd-left", "--", "-O", "ihex", "pinkeybd-left.hex"]
+dependencies = ["build"]
+
+[tasks.objcopy-right]
+install_crate = { crate_name = "cargo-binutils", binary = "cargo", test_arg = ["objcopy", "--help"] }
+command = "cargo"
+args = ["objcopy", "--release", "--bin", "pinkeybd-right", "--", "-O", "ihex", "pinkeybd-right.hex"]
+dependencies = ["build"]
+
+[tasks.uf2-left]
+install_crate = { crate_name = "cargo-hex-to-uf2", binary = "cargo", test_arg = ["hex-to-uf2", "--help"] }
+command = "cargo"
+args = ["hex-to-uf2", "--input-path", "pinkeybd-left.hex", "--output-path", "pinkeybd-left.uf2", "--family", "nrf52840"]
+dependencies = ["objcopy-left"]
+
+[tasks.uf2-right]
+install_crate = { crate_name = "cargo-hex-to-uf2", binary = "cargo", test_arg = ["hex-to-uf2", "--help"] }
+command = "cargo"
+args = ["hex-to-uf2", "--input-path", "pinkeybd-right.hex", "--output-path", "pinkeybd-right.uf2", "--family", "nrf52840"]
+dependencies = ["objcopy-right"]
+
+[tasks.uf2]
+dependencies = ["uf2-left", "uf2-right"]

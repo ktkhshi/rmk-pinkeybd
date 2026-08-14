@@ -30,7 +30,16 @@ pub struct PinkeybdMatrix<'d, const ROW_OFFSET: usize> {
     scan_map: [[ScanLocation; COLS]; LOCAL_ROWS],
 }
 
-pub fn new<'d, const ROW_OFFSET: usize>(pins: [Flex<'d>; PINS]) -> PinkeybdMatrix<'d, ROW_OFFSET> {
+pub fn new<'d, const ROW_OFFSET: usize>(
+    mut pins: [Flex<'d>; PINS],
+) -> PinkeybdMatrix<'d, ROW_OFFSET> {
+    // Pin 5 is only sampled by Pinkeybd's 5x6 transform and is never made
+    // an output. Initialise every line explicitly so that it has a defined
+    // input configuration before the first scan.
+    for pin in &mut pins {
+        pin.set_as_input(Pull::Down);
+    }
+
     let scan_map = [
         [
             ScanLocation::Ignore,
