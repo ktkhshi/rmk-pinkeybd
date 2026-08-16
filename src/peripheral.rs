@@ -108,7 +108,7 @@ async fn main(spawner: Spawner) {
     let mut encoder = RotaryEncoder::with_resolution(
         Input::new(p.P0_04, Pull::Up),
         Input::new(p.P0_05, Pull::Up),
-        24,
+        2,
         true,
         0,
     );
