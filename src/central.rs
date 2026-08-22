@@ -194,7 +194,7 @@ async fn main(spawner: Spawner) {
     let mut pointing_processor = PointingProcessor::new(
         &keymap,
         PointingProcessorConfig {
-            invert_y: true,
+            invert_y: false,
             swap_xy: true,
             ..Default::default()
         },
